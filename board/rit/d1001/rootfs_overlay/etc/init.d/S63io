@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Run the io daemon
+#
+
+DAEMON="io"
+PIDFILE="/var/run/$DAEMON.pid"
+BAUD="b115200"
+DEV="/dev/ttyS3"
+TCP_PORT="10003"
+
+
+start() {
+	echo -n "Starting $DAEMON... "
+	start-stop-daemon -S -b -m -p $PIDFILE -x /usr/bin/socat -- tcp-l:$TCP_PORT,reuseaddr,fork $DEV,$BAUD,raw,echo=0,crnl
+	[ $? -eq 0 ] && echo "OK" || echo "ERROR"
+}
+
+stop() {
+	echo -n "Stopping $DAEMON... "
+	start-stop-daemon -K -p $PIDFILE
+	[ $? -eq 0 ] && echo "OK" || echo "ERROR"
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start|stop|restart)
+	"$1"
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

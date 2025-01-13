@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# Run the rs485 daemon
+#
+
+DAEMON="rs485"
+PIDFILE="/var/run/$DAEMON.pid"
+DEV="/dev/ttyS6"
+TCP_PORT="10006"
+
+if [ -n "$2" -a "$2" -eq "$2" ]
+then
+  BAUD="$2"
+else
+  BAUD="9600"
+fi
+
+start() {
+	echo -n "Starting $DAEMON... "
+  setupRS485
+	start-stop-daemon -S -b -m -p $PIDFILE -x /usr/bin/socat -- tcp-l:$TCP_PORT,reuseaddr,fork $DEV,b$BAUD,raw,echo=0,crnl
+  echo "Set baudrate to $BAUD"
+	[ $? -eq 0 ] && echo "OK" || echo "ERROR"
+}
+
+stop() {
+	echo -n "Stopping $DAEMON... "
+	start-stop-daemon -K -p $PIDFILE
+	[ $? -eq 0 ] && echo "OK" || echo "ERROR"
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start|stop|restart)
+	"$1"
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart} baudrate"
+	exit 1
+esac
+
+exit $?
